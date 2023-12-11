@@ -20,7 +20,9 @@ func InitDB() {
 	err = DB.AutoMigrate(
 		&common.User{},
 		&common.Video{},
-		&common.UserVideoRelation{},
+		&common.Like{},
+		&common.View{},
+		&common.Comment{},
 	)
 	if err != nil {
 		log.Fatal(err)

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Video</title>
+</head>
+<body>
+    <h2>Upload Video</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <label for="title">Title:</label><br>
+        <input type="text" id="title" name="title" required><br>
+        
+        <label for="video_file">Video file:</label><br>
+        <input type="file" id="video_file" name="video_file" accept="video/*" required><br>
+
+        <label for="cover_file">Cover Image:</label><br>
+        <input type="file" id="cover_file" name="cover_file" accept="image/*" required><br>
+
+        <button type="submit">Upload</button>
+    </form>
+
+    <button onclick="goBack()">Go Back</button>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+			const token = localStorage.getItem("token");
+            var formData = new FormData(this);
+            fetch('/video/publish', {
+        		method: 'POST',
+        		body: formData,
+        		headers: {
+            		'token': token
+        		}
+    		})
+			.then(response => {
+				if (response.status != 200) {
+					alert("Upload fail");	
+				} else {
+					alert("Upload success!")
+					window.location.href = '/user/space';	
+				}
+			})
+            .then(data => {
+            	alert(data.message);
+			})
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        function goBack() {
+            // Implement the logic to go back to the main page
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
+

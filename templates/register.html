@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register Page</title>
+</head>
+<body>
+
+    <h1>Register</h1>
+    <form id="registerForm" action="/user/register" method="POST">
+        <label for="username">Username:</label><br>
+        <input type="text" id="username" name="username"><br>
+
+        <label for="password">Password:</label><br>
+        <input type="password" id="password" name="password"><br><br>
+
+    </form>
+    <button id="register">Register</button>
+    <button id="back">Back</button>
+<style>
+.requirement {
+	font-size: 14px;
+}
+</style>
+    <div class="requirement">
+	    <p>Username requirements: 3 to 20 characters, allowing letters, numbers, underscores, and hyphens.</p>
+            <p>Password requirements: 6 to 20 characters, allowing letters, numbers, and special characters.</p>
+    </div>
+    <script>
+        document.getElementById('register').addEventListener('click', async function() {
+	    const formData = new FormData(registerForm);
+            const response = await fetch('/user/register', {
+                method: 'POST',
+                body: formData
+            });
+
+            const responseData = await response.json();
+            if (response.status === 200) {
+                alert('Registration success!');
+                window.location.href = "http://101.43.169.95:8080/";
+            } else {
+                alert('Registration failed: ' + responseData.message);
+            }			
+	})
+
+	document.getElementById('back').addEventListener('click', function() {
+		window.location.href = "/";
+        });
+
+    </script>
+</body>
+</html>
+

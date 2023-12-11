@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome Page</title>
+</head>
+<body>
+    <h1>Tiktok</h1>
+    <p id="userWelcome">Enjoy your visit</p>
+    
+    <button id="register">Register</button>
+    <button id="login">Login</button>
+    <button id="logout">Logout</button>
+    <button id="mySpace">MySpace</button>
+    	
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                fetch('/vertify/jwt', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // 添加 'Bearer '前缀
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.isValid) {
+                        document.getElementById('userWelcome').textContent = `Welcome, ${data.user}!`;
+                    } else {
+                        document.getElementById('userWelcome').textContent = 'Welcome to Tiktok!';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+
+        document.getElementById('login').addEventListener('click', function() {
+            window.location.href = '/user/login';
+        });
+
+        document.getElementById('register').addEventListener('click', function() {
+            window.location.href = '/user/register';
+        });
+
+        document.getElementById("logout").addEventListener("click", function() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                var confirmLogout = confirm("Sure to logout?");
+                if (confirmLogout) {
+                    localStorage.removeItem("token");
+                    window.location.href = "/";
+                } 
+            } else {
+                alert("You are not logged in.");
+            }
+         });
+	
+        document.getElementById('mySpace').addEventListener('click', function() {
+      	    const token = localStorage.getItem('token');
+    	    if (token) {
+    	        fetch('/vertify/jwt', {
+        	    method: 'GET',
+               	    headers: {
+                        'Authorization': token
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.isValid) {
+                        window.location.href = '/user/space';
+                    } else {
+                        alert('You are not logged in');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+    	    } else {	
+        	alert('You are not logged in');
+    	    }	
+	});
+
+    </script>
+
+    <p>Designed by KreanXie</p>
+</body>
+</html>
+

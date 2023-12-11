@@ -3,6 +3,7 @@ package user
 import (
 	"errors"
 	"net/http"
+	"regexp"
 
 	"tiktok/common"
 	db "tiktok/middleware/database"
@@ -11,57 +12,53 @@ import (
 	"gorm.io/gorm"
 )
 
-func Register(c *gin.Context) {
-	account := c.PostForm("account")
-	password := c.PostForm("password")
-	username := c.PostForm("username")
+func RegisterPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "register.html", gin.H{
+		"title": "register page",
+	})
+}
 
-	err := createUser(account, password, username)
+func Register(c *gin.Context) {
+	username := c.PostForm("username")
+	password := c.PostForm("password")
+	err := createUser(username, password)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "register fail, error type:" + err.Error(),
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": err.Error(),
 		})
-		c.Redirect(http.StatusFound, "/register-fail")
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "register success",
 		})
-		c.Redirect(http.StatusFound, "/register-success")
 	}
 }
 
-func RegisterFail(c *gin.Context) {
-	confirmed := c.PostForm("confirmed")
-
-	if confirmed == "true" {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "user confirmed",
-		})
-		c.Redirect(http.StatusFound, "/register")
-	}
-}
-
-func RegisterSuccess(c *gin.Context) {
-	confirmed := c.PostForm("confirmed")
-
-	if confirmed == "true" {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "user confirmed",
-		})
-		c.Redirect(http.StatusFound, "/")
-	}
-}
-
-func createUser(account, password, username string) error {
+func createUser(username, password string) error {
 	user := common.User{
-		Account:   account,
-		Password:  password,
 		Username:  username,
+		Password:  password,
 		Signature: "This user has no signature.",
 	}
-	if err := db.DB.Where("account = ?", account).First(&user).Error; err != gorm.ErrRecordNotFound {
-		return errors.New("Account already exists")
-	} else {
-		return db.DB.Create(&user).Error
+	if err := checkPatternOfUsernameAndPassword(username, password); err != nil {
+		return err
 	}
+	if err := db.DB.Where("username = ?", username).First(&user).Error; err != gorm.ErrRecordNotFound {
+		return errors.New("Username already exists")
+	}
+	return db.DB.Create(&user).Error
+}
+
+func checkPatternOfUsernameAndPassword(username, password string) error {
+	usernamePattern := `^[a-zA-Z0-9_-]{3,20}$`
+	passwordPattern := `^[a-zA-Z0-9@#$%^&+=*!_-]{6,20}$`
+
+	validUsername := regexp.MustCompile(usernamePattern).MatchString(username)
+	validPassword := regexp.MustCompile(passwordPattern).MatchString(password)
+	if !validUsername {
+		return errors.New("Invalid pattern of Username")
+	}
+	if !validPassword {
+		return errors.New("Invalid pattern of Password")
+	}
+	return nil
 }

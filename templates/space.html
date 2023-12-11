@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Space</title>
+    <style>
+        .upload-button {
+            position: absolute;
+            top: 10px;   
+            right: 10px; 
+        }
+        .video-item {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="spaceTitle"></h1>
+    <p id="userSignature"></p>
+    <button id="editSignature">Edit Signature</button>
+    <div id="videosList">
+        <!-- Videos will be listed here -->
+    </div>
+
+    <button id="uploadVideo" class="upload-button">Upload new video</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                fetch('/video/list', {
+                    method: 'GET',
+                    headers: {
+                        'token': token
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.username) {
+                        document.getElementById('spaceTitle').textContent = `${data.username}'s Space`;
+                        document.getElementById('userSignature').textContent = `Signature: ${data.signature}`;
+                    } else {
+                        document.getElementById('spaceTitle').textContent = 'Please log in';
+                    }
+
+                    const list = document.getElementById('videosList');
+                    data.videos.forEach(video => {
+                        const videoElement = document.createElement('div');
+                        videoElement.classList.add('video-item');
+                        videoElement.innerHTML = `
+                                <h3>${video.title}</h3>
+                                <img src="${video.cover_url}" alt="Cover Image" width="150" height="150">
+                                <br>
+                                <button onclick="window.open('${video.video_url}', '_blank')">Watch Video</button>
+                                <button class="delete-video-btn" data-video-id="${video.video_id}">Delete Video</button>
+                        `;
+			list.appendChild(videoElement);
+                        });
+
+			setTimeout(() => {
+    document.querySelectorAll('.delete-video-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const videoId = this.getAttribute('data-video-id');
+            console.log('Deleting video with ID:', videoId); // 打印videoId以进行调试
+        });
+    });
+}, 0);
+
+                        document.querySelectorAll('.delete-video-btn').forEach(button => {
+                        button.addEventListener('click', function() {
+                            const videoId = this.getAttribute('data-video-id');
+                            fetch(`/video/delete/${videoId}`, {
+                                method: 'DELETE',
+                            })
+                            .then(response => {
+                                if (response.status != 200) {
+                                    alert("Delete video fail");
+                                } else {
+                                    return response.json();
+                                }
+                            })
+                            .then(data => {
+                                alert("Delete video success!");
+                                // window.location.href = '/user/space';
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                            });
+                        });
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+            } else {
+                alert('Please log in to access your videos.');
+                window.location.href = '/user/login'; // Redirect to login page
+            }
+        });
+
+        document.getElementById('uploadVideo').addEventListener('click', function() {
+            window.location.href = '/video/publish';
+        });
+
+        document.getElementById('editSignature').addEventListener('click', function() {
+                const newSignature = prompt("Enter your new signature:");
+                if (newSignature !== null) {
+                        fetch('/update/signature', {
+                        method: 'POST',
+                        headers: {
+                                'Content-Type': 'application/json',
+                                'token': token
+                        },
+                        body: JSON.stringify({ signature: newSignature })
+                })
+                .then(response => response.json())
+                .then(data => {
+                        alert(data.message);
+                        window.location.href = '/user/space';
+                })
+                .catch(error => {
+                        console.error('Error:', error);
+                });
+                }       
+        });
+
+    </script>
+
+</body>
+</html>

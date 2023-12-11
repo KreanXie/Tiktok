@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 // Set token expiration to one month
@@ -15,14 +16,14 @@ const UserTokenExpirationSec = 900
 var secret = []byte("Here is tiktok")
 
 type MyClaims struct {
-	Account string
+	Username string
 	jwt.StandardClaims
 }
 
 // IssueToken returns a jwt for given user
-func IssueToken(account string) (string, error) {
+func IssueToken(username string) (string, error) {
 	c := MyClaims{
-		account,
+		username,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(TokenExpireDuration).Unix(),
 			Issuer:    "Krean",
@@ -46,6 +47,27 @@ func ParseToken(tokenString string) (*MyClaims, error) {
 		} else {
 			return c, nil
 		}
+	}
+}
+
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 从请求头中获取 Token
+		tokenString := c.GetHeader("Authorization")
+		// 验证 Token
+		claims, err := ParseToken(tokenString)
+		if err != nil {
+			// Token 验证失败
+			// 而不是直接返回，设置一个标记表示未认证
+			c.Set("isAuthenticated", false)
+		} else {
+			// Token 验证成功，将用户信息添加到上下文中
+			c.Set("isAuthenticated", true)
+			c.Set("username", claims.Username)
+		}
+
+		// 继续执行后续的处理函数
+		c.Next()
 	}
 }
 

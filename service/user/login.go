@@ -1,71 +1,58 @@
 package user
 
 import (
+	"log"
 	"net/http"
 	"tiktok/common"
 	db "tiktok/middleware/database"
-	jwt "tiktok/middleware/jwt"
-	rd "tiktok/middleware/redis"
+	"tiktok/middleware/jwt"
 
 	"github.com/gin-gonic/gin"
 )
 
+func LoginPage(c *gin.Context) {
+	c.HTML(http.StatusOK, "login.html", gin.H{
+		"title": "Login page",
+	})
+}
+
 func Login(c *gin.Context) {
-	token := c.Query("token")
-	// Check token
-	if ok, err := rd.CheckToken(token); !ok || err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "invalid token: blocking",
-			"error":   err,
-		})
-		return
-	}
-
-	// Query account and password
-	account := c.PostForm("account")
+	username := c.PostForm("username")
 	password := c.PostForm("password")
-
-	// Parse token
-	if _, err := jwt.ParseToken(token); err != nil {
+	if isAuthenticated, ok := c.Get("isAuthenticated"); ok && isAuthenticated.(bool) {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "invalid token: jwt parse fail",
-			"error":   err.Error(),
-		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "valid token: jwt pass",
+			"message": "token passed",
 		})
 		return
 	}
-
-	// Check if password matches the account
-	if err := checkAccountAndPassword(account, password); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "login fail, unknown account or wrong password",
+	// Check if password matches the username
+	if err := checkUsernameAndPassword(username, password); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "login fail, unknown username or wrong password",
 		})
 	} else {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "login success, correct account and password",
-		})
-		token, err = jwt.IssueToken(account)
+		tokenString, err := jwt.IssueToken(username)
 		if err != nil {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "issue token fail",
-				"error":   err,
-			})
-		} else {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "issue token success",
-			})
+			log.Println("Fail to issue token: ", err)
+			tokenString = "Wrong token"
 		}
+		updateToken(username, tokenString)
+		c.JSON(http.StatusOK, gin.H{
+			"message": "login success",
+			"token":   tokenString,
+		})
 	}
 }
 
-// Check if given password match the given account, return nil if matches.
-func checkAccountAndPassword(account, password string) error {
+// Check if given password match the given username, return nil if matches.
+func checkUsernameAndPassword(username, password string) error {
 	user := common.User{
-		Account:  account,
+		Username: username,
 		Password: password,
 	}
-	return db.DB.Where("account = ? and password = ?", account, password).First(&user).Error
+	return db.DB.Where("username = ? and password = ?", username, password).First(&user).Error
+}
+
+func updateToken(username, token string) error {
+	return db.DB.Model(&common.User{}).Where("username = ?", username).Update("token", token).Error
 }
