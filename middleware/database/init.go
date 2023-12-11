@@ -11,7 +11,7 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	dsn := "root:secret!!!@tcp(localhost:3306)/tiktok?charset=utf8mb4&parseTime=True&loc=Local"
+	// dsn connect is hiden here
 	var err error
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
