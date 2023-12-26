@@ -11,7 +11,7 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	dsn := "root:secret!!!@tcp(localhost:3306)/tiktok?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:secret!@tcp(localhost:3306)/tiktok?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -20,9 +20,9 @@ func InitDB() {
 	err = DB.AutoMigrate(
 		&common.User{},
 		&common.Video{},
-		&common.Like{},
 		&common.View{},
 		&common.Comment{},
+		&common.Report{},
 	)
 	if err != nil {
 		log.Fatal(err)
