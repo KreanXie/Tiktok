@@ -1,6 +1,5 @@
 # Tiktok
-
-A simple video application designed by myself.
+A simple video application.
 
 Under developing before 2023.12.11.
 
